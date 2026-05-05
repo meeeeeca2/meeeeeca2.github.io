@@ -3,214 +3,175 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>커스텀 페이지 예시</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --accent: #beff00;
-      --bg: #111;
-      --text: #f0f0f0;
-      --text-muted: #888;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Noto Sans KR', sans-serif;
-      line-height: 1.7;
-    }
-
-    /* ── 히어로 ── */
-    .hero {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 64px 48px;
-      min-height: 300px;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero-tag {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 16px;
-    }
-
-    .hero-title {
-      font-size: clamp(28px, 4vw, 44px);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.2;
-      margin-bottom: 20px;
-    }
-
-    .hero-desc {
-      font-size: 15px;
-      color: rgba(255, 255, 255, 0.6);
-      max-width: 480px;
-    }
-
-    .hero-orb {
-      position: absolute;
-      width: 300px;
-      height: 300px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(190,255,0,0.08) 0%, transparent 70%);
-      top: -80px;
-      right: -60px;
-      pointer-events: none;
-    }
-
-    /* ── 섹션 공통 ── */
-    .section {
-      padding: 56px 48px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .section-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 32px;
-    }
-
-    /* ── 태그 리스트 ── */
-    .tag-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 6px 14px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 100px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    /* ── 이미지 그리드 ── */
-    .img-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .img-grid img {
-      width: 100%;
-      aspect-ratio: 4/3;
-      object-fit: cover;
-      border-radius: 8px;
-      background: #222;
-    }
-
-    /* ── 텍스트 블록 ── */
-    .text-block {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .text-block h3 {
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .text-block p {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.8;
-    }
-
-    /* ── 메타 데이터 ── */
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 24px;
-    }
-
-    .meta-item dt {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 6px;
-    }
-
-    .meta-item dd {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-  </style>
+  <title>JeongYS Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- 히어로 -->
-  <div class="hero">
-    <div class="hero-orb"></div>
-    <div class="hero-tag">Type A — 커스텀 HTML 카드 예시</div>
-    <h1 class="hero-title">이곳에 프로젝트<br>제목을 입력하세요</h1>
-    <p class="hero-desc">card_page/02_custom_page/index.html 파일을 직접 수정하여 원하는 콘텐츠로 꾸밀 수 있습니다.</p>
-  </div>
+  <!-- 스크롤 진행 표시바 -->
+  <div id="scrollProgressBar"></div>
 
-  <!-- 메타 정보 -->
-  <div class="section">
-    <div class="section-label">Project Info</div>
-    <dl class="meta-grid">
-      <div class="meta-item">
-        <dt>Category</dt>
-        <dd>UX / UI Design</dd>
-      </div>
-      <div class="meta-item">
-        <dt>Period</dt>
-        <dd>2023.01 — 2023.06</dd>
-      </div>
-      <div class="meta-item">
-        <dt>Role</dt>
-        <dd>Lead Designer</dd>
-      </div>
-      <div class="meta-item">
-        <dt>Tools</dt>
-        <dd>Figma, Principle</dd>
-      </div>
-    </dl>
-  </div>
+  <!-- 고정 헤더 -->
+  <header class="site-header" id="siteHeader">
+    <div class="header-brand">JeongYS</div>
+    <div class="header-actions">
+      <button class="btn-resume" id="resumeBtn">Resume 열람하기</button>
+    </div>
+  </header>
 
-  <!-- 개요 -->
-  <div class="section">
-    <div class="section-label">Overview</div>
-    <div class="text-block">
-      <h3>프로젝트 배경과 목표</h3>
-      <p>이 섹션에 프로젝트의 배경과 목표를 자유롭게 작성하세요. HTML과 CSS를 활용하여 원하는 레이아웃으로 구성할 수 있습니다.</p>
-      <p>images/ 폴더에 이미지를 추가하고 &lt;img src="images/파일명"&gt; 형태로 참조하면 이미지도 사용할 수 있습니다.</p>
+  <!-- ───────────── INTRO ───────────── -->
+  <section id="intro" class="intro-section">
+    <div class="intro-sticky" id="introSticky">
+
+      <!-- ── 슬라이드 1: 안녕하세요 + Position 도넛차트 ── -->
+      <div class="intro-slide" id="introSlide0">
+        <div class="slide-layout">
+          <div class="slide-heading">
+            <div class="slide-big-line" id="s1Line1">안녕하세요</div>
+            <div class="slide-big-line" id="s1Line2">저는 정영섭 이고요</div>
+          </div>
+
+          <div class="s1-bottom-row">
+            <!-- 도넛 차트 -->
+            <div class="donut-outer" id="s1Chart">
+              <div class="donut-inner">
+                <svg class="donut-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- 배경 링 -->
+                  <circle class="donut-track" cx="100" cy="100" r="66"/>
+                  <!-- GUI Design 10% — 연한 노란색, 마지막 세그먼트 -->
+                  <circle class="donut-seg donut-gui" cx="100" cy="100" r="66"
+                    stroke-dasharray="0 414.69" stroke-dashoffset="-373.22"
+                    transform="rotate(-90 100 100)"/>
+                  <!-- UI/UX Planning 40% — 주황 -->
+                  <circle class="donut-seg donut-uiux" cx="100" cy="100" r="66"
+                    stroke-dasharray="0 414.69" stroke-dashoffset="-207.35"
+                    transform="rotate(-90 100 100)"/>
+                  <!-- PM 50% — 노랑, 12시 방향부터 시작 -->
+                  <circle class="donut-seg donut-pm" cx="100" cy="100" r="66"
+                    stroke-dasharray="0 414.69" stroke-dashoffset="0"
+                    transform="rotate(-90 100 100)"/>
+                  <!-- 중앙 텍스트 -->
+                  <text class="donut-center-text" x="100" y="100"
+                    text-anchor="middle" dominant-baseline="middle">Position</text>
+                </svg>
+                <!-- 외부 레이블 -->
+                <div class="d-label d-label-pm" id="s1LabelPm">PM<br><b>50%</b></div>
+                <div class="d-label d-label-uiux" id="s1LabelUiux">UI/UX Planning<br><b>40%</b></div>
+                <div class="d-label d-label-gui" id="s1LabelGui">GUI Design<br><b>10%</b></div>
+              </div>
+            </div>
+            <!-- "입니다." -->
+            <div class="slide-big-line s1-suffix" id="s1Suffix">입니다.</div>
+          </div>
+
+          <div class="slide-footer">
+            <span class="slide-footer-brand">2023 Portfolio</span>
+            <span class="slide-footer-num">1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 슬라이드 2: 제가 주로 해왔던 작업을 ── -->
+      <div class="intro-slide" id="introSlide1">
+        <div class="slide-layout">
+          <div class="slide-heading">
+            <div class="slide-big-line" id="s2Line1">제가 주로 해왔던 작업을</div>
+            <div class="slide-big-line" id="s2Line2">나열해 봤습니다.</div>
+          </div>
+          <div class="slide-footer">
+            <span></span>
+            <span class="slide-footer-num">2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 슬라이드 3: "우리(=회사)가…" 인용구 ── -->
+      <div class="intro-slide" id="introSlide2">
+        <div class="slide-layout slide-layout-quote">
+          <div class="slide-heading">
+            <div class="slide-big-line s3-quote-line" id="s3Line1">
+              <span class="quote-mark">"</span><span class="quote-highlight">우리(=회사)가</span>
+            </div>
+            <div class="slide-big-line" id="s3Line2">써먹을 만한 능력이 있나?!"</div>
+            <div class="slide-big-line" id="s3Line3">싶은게 있었으면 좋겠군요.</div>
+          </div>
+          <div class="slide-footer">
+            <span></span>
+            <span class="slide-footer-num">3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 닷 네비게이터 -->
+      <div class="intro-dots" id="introDots">
+        <span class="intro-dot active" data-index="0"></span>
+        <span class="intro-dot" data-index="1"></span>
+        <span class="intro-dot" data-index="2"></span>
+      </div>
+
+      <!-- 스크롤 유도 -->
+      <div class="intro-cue" id="introCue">
+        <span>Scroll</span>
+        <div class="intro-cue-arrow"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ───────────── CARDS ───────────── -->
+  <section id="cards" class="cards-section">
+    <div class="cards-section-inner">
+      <div class="cards-grid" id="cardsGrid">
+        <!-- JS가 cards.json 기반으로 렌더링 -->
+        <div class="cards-loading" id="cardsLoading">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────── 카드 상세 팝업 ───────────── -->
+  <div id="cardPopup" class="popup" role="dialog" aria-modal="true" aria-label="포트폴리오 상세">
+    <div class="popup-backdrop" id="cardPopupBackdrop"></div>
+    <div class="popup-panel" id="cardPopupPanel">
+      <button class="popup-close" id="cardPopupClose" aria-label="닫기">✕</button>
+      <div class="popup-scroll-wrap" id="cardPopupScroll">
+        <!-- 상단 센티넬: 이전 카드 로딩 트리거 -->
+        <div class="popup-sentinel" id="cardTopSentinel"></div>
+        <!-- 동적으로 카드 블록 삽입 -->
+        <div class="popup-blocks" id="cardPopupBlocks"></div>
+        <!-- 하단 센티넬: 다음 카드 로딩 트리거 -->
+        <div class="popup-sentinel" id="cardBottomSentinel"></div>
+      </div>
     </div>
   </div>
 
-  <!-- 사용 기술 -->
-  <div class="section">
-    <div class="section-label">Skills &amp; Tools</div>
-    <div class="tag-list">
-      <span class="tag">Figma</span>
-      <span class="tag">Prototyping</span>
-      <span class="tag">User Research</span>
-      <span class="tag">Wireframing</span>
-      <span class="tag">Design System</span>
-      <span class="tag">Usability Testing</span>
+  <!-- ───────────── 이력서 팝업 ───────────── -->
+  <div id="resumePopup" class="popup" role="dialog" aria-modal="true" aria-label="Resume">
+    <div class="popup-backdrop" id="resumePopupBackdrop"></div>
+    <div class="popup-panel" id="resumePopupPanel">
+      <button class="popup-close" id="resumePopupClose" aria-label="닫기">✕</button>
+      <div class="popup-scroll-wrap" id="resumePopupScroll">
+        <div class="popup-blocks" id="resumePopupBlocks">
+          <div class="cards-loading">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- Go to Top 버튼 -->
+  <button class="go-top-btn" id="goTopBtn" aria-label="맨 위로">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M8 12V4M8 4L4 8M8 4L12 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Top</span>
+  </button>
+
+  <script src="script.js"></script>
 </body>
 </html>
