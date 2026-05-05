@@ -1,0 +1,822 @@
+/* ─────────────────────────────────────────
+   CSS 변수 & 리셋
+───────────────────────────────────────── */
+:root {
+  --bg:           #0d0d0d;
+  --bg-card:      #181818;
+  --bg-popup:     #111111;
+  --accent:       #beff00;
+  --accent-glow:  rgba(190, 255, 0, 0.25);
+  --text:         #f0f0f0;
+  --text-muted:   #777;
+  --text-dim:     #444;
+  --border:       rgba(255, 255, 255, 0.07);
+  --radius-sm:    8px;
+  --radius:       14px;
+  --radius-lg:    20px;
+  --ease:         cubic-bezier(0.4, 0, 0.2, 1);
+  --dur:          0.32s;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; }
+
+img { display: block; max-width: 100%; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+/* ─────────────────────────────────────────
+   스크롤 진행 표시바
+───────────────────────────────────────── */
+#scrollProgressBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  background: var(--accent);
+  z-index: 9999;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ─────────────────────────────────────────
+   헤더
+───────────────────────────────────────── */
+.site-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 58px;
+  background: rgba(13, 13, 13, 0);
+  transition: background var(--dur) var(--ease), backdrop-filter var(--dur) var(--ease);
+}
+
+.site-header.scrolled {
+  background: rgba(13, 13, 13, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.header-brand {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #111111; /* 기본: 어두운 색 (인트로 밝은 배경 위) */
+  opacity: 0.9;
+  transition: color var(--dur) var(--ease);
+}
+
+.site-header.scrolled .header-brand {
+  color: var(--text); /* 스크롤 후 헤더 어두워지면 밝은 텍스트 */
+}
+
+.btn-resume {
+  background: var(--accent);
+  color: #000;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  transition: box-shadow var(--dur) var(--ease), transform 0.15s var(--ease);
+}
+
+.btn-resume:hover {
+  box-shadow: 0 0 24px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+/* ─────────────────────────────────────────
+   INTRO 섹션
+───────────────────────────────────────── */
+.intro-section {
+  position: relative;
+  height: 280vh;
+}
+
+.intro-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: #eeeeee;
+}
+
+/* 주변부 비네팅 — 밝은 배경에 맞춰 매우 연하게 */
+.intro-sticky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.06) 100%);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.intro-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+/* ── 슬라이드 공통 레이아웃 ── */
+.slide-layout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 9vw 5vh;
+}
+
+.slide-layout-quote {
+  justify-content: center;
+}
+
+.slide-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+}
+
+/* 큰 텍스트 공통 */
+.slide-big-line {
+  font-size: clamp(36px, 5.6vw, 78px);
+  font-weight: 900;
+  line-height: 1.18;
+  letter-spacing: -0.03em;
+  color: #111111;
+  opacity: 0;
+  transform: translateY(32px);
+  will-change: opacity, transform;
+}
+
+/* 슬라이드 1 하단 행 (도넛 + 입니다.) */
+.s1-bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 3.5vw;
+  margin-top: 3.5vh;
+  margin-left: 25vw;
+}
+
+.s1-suffix {
+  /* 나머지 위치/크기는 .slide-big-line 상속 */
+}
+
+/* 슬라이드 푸터 */
+.slide-footer {
+  position: absolute;
+  bottom: 5vh;
+  left: 9vw;
+  right: 9vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  opacity: 0;
+  will-change: opacity;
+}
+
+.slide-footer-brand {
+  font-size: 11px;
+  color: rgba(0,0,0,0.25);
+  letter-spacing: 0.06em;
+}
+
+.slide-footer-num {
+  font-size: 11px;
+  color: rgba(0,0,0,0.20);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 슬라이드 3: 강조색 — 밝은 배경에서 가독성 있는 골드 ── */
+.quote-mark {
+  color: #fe9500;
+}
+
+.quote-highlight {
+  color: #fe9500;
+}
+
+/* ─────────────────────────────────────────
+   도넛 차트
+───────────────────────────────────────── */
+.donut-outer {
+  position: relative;
+  opacity: 0;
+  transform: translateY(32px);
+  will-change: opacity, transform;
+  flex-shrink: 0;
+}
+
+.donut-inner {
+  position: relative;
+  width: clamp(120px, 13vw, 200px);
+  height: clamp(120px, 13vw, 200px);
+}
+
+.donut-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* 배경 링 */
+.donut-track {
+  fill: none;
+  stroke: rgba(0,0,0,0.07);
+  stroke-width: 20;
+}
+
+/* 세그먼트 공통 */
+.donut-seg {
+  fill: none;
+  stroke-width: 20;
+  stroke-linecap: butt;
+}
+
+.donut-pm   { stroke: #f5c542; }
+.donut-uiux { stroke: #f08a20; }
+.donut-gui  { stroke: #f5c542; opacity: 0.38; } /* 연하게 표현 — JS가 dasharray 제어 */
+
+/* 중앙 텍스트 */
+.donut-center-text {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  fill: #f08a20;
+  letter-spacing: -0.01em;
+}
+
+/* ── 도넛 레이블 ── */
+.d-label {
+  position: absolute;
+  font-size: clamp(9px, 0.82vw, 11px);
+  line-height: 1.5;
+  opacity: 0;
+  will-change: opacity;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.d-label b {
+  display: block;
+  font-weight: 700;
+}
+
+/*
+  각 레이블은 해당 호(arc)의 중점 각도 위치에 배치.
+  컨테이너 기준 (0,0) = 왼쪽 상단, center = (50%, 50%).
+  외곽 오프셋 = 호 외곽 반지름(76/100 SVG → 38%) + 여백 4% = 42% of 컨테이너.
+
+  PM(50%)  : θ = 90°  → sin=1, cos=0
+    x = 50% + 42%*1  = 92%,  y = 50% - 42%*0  = 50%  → 오른쪽 중앙
+  UI/UX(40%): θ = 252° → sin=-0.951, cos=-0.309
+    x = 50% - 40%    = 10%,  y = 50% + 13%    = 63%  → 왼쪽 아래
+  GUI(10%) : θ = 342° → sin=-0.309, cos=0.951
+    x = 50% - 13%    = 37%,  y = 50% - 40%    = 10%  → 위쪽 중앙-왼쪽
+*/
+
+/* PM 50% — 3시 방향 오른쪽 */
+.d-label-pm {
+  left: 92%;
+  top: 50%;
+  transform: translate(10px, -50%);
+  color: #c07800;
+  text-align: left;
+}
+.d-label-pm b { color: #c07800; }
+
+/* UI/UX Planning 40% — 7~8시 방향 왼쪽 아래 */
+.d-label-uiux {
+  left: 10%;
+  top: 63%;
+  transform: translate(calc(-100% - 10px), -50%);
+  color: #c06010;
+  text-align: right;
+}
+.d-label-uiux b { color: #c06010; }
+
+/* GUI Design 10% — 11시 방향 위쪽 */
+.d-label-gui {
+  left: 37%;
+  top: 10%;
+  transform: translate(-50%, calc(-100% - 10px));
+  color: rgba(180, 130, 0, 0.65);
+  text-align: center;
+}
+.d-label-gui b { color: rgba(180, 130, 0, 0.65); }
+
+/* 닷 네비게이터 */
+.intro-dots {
+  position: absolute;
+  bottom: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.intro-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.2);
+  transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.intro-dot.active {
+  background: #fe9500;
+  transform: scale(1.4);
+}
+
+/* 스크롤 유도 */
+.intro-cue {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  opacity: 1;
+  transition: opacity 0.4s var(--ease);
+  color: rgba(0, 0, 0, 0.35);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.intro-cue.hidden { opacity: 0; }
+
+.intro-cue-arrow {
+  width: 1px;
+  height: 32px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.35), transparent);
+  animation: cueArrow 1.6s ease-in-out infinite;
+}
+
+@keyframes cueArrow {
+  0%, 100% { transform: scaleY(1); opacity: 1; }
+  50%       { transform: scaleY(0.6); opacity: 0.4; }
+}
+
+/* ─────────────────────────────────────────
+   카드 섹션
+───────────────────────────────────────── */
+.cards-section {
+  position: relative;
+  z-index: 2;
+  background: var(--bg);
+}
+
+.cards-section-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 50px 32px 120px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .cards-section-inner { padding: 48px 16px 80px; }
+}
+
+/* 카드 아이템 */
+.card-item {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.5s var(--ease),
+    transform 0.5s var(--ease),
+    box-shadow var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.card-item.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card-item:hover {
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(190, 255, 0, 0.2);
+  border-color: rgba(190, 255, 0, 0.2);
+  transform: translateY(-4px);
+}
+
+.card-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #1e1e1e;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.card-thumb-inner {
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s var(--ease);
+}
+
+.card-item:hover .card-thumb-inner {
+  transform: scale(1.05);
+}
+
+.card-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 40%, rgba(13,13,13,0.7) 100%);
+}
+
+.card-thumb-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 28px;
+}
+
+.card-meta {
+  padding: 18px 20px 20px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.card-type-badge::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+
+.card-type-badge.type-a::before { background: #7b9fff; }
+.card-type-badge.type-b::before { background: var(--accent); }
+
+/* 로딩 스피너 */
+.cards-loading {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─────────────────────────────────────────
+   팝업 공통
+───────────────────────────────────────── */
+.popup {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.popup.active {
+  pointer-events: all;
+  visibility: visible;
+}
+
+/* 반투명 블러 배경 */
+.popup-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.popup.active .popup-backdrop {
+  opacity: 1;
+}
+
+/* 팝업 패널 */
+.popup-panel {
+  position: relative;
+  z-index: 1;
+  width: min(97vw, 1920px);
+  height: 96vh;
+  background: var(--bg-popup);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(20px) scale(0.97);
+  transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+  margin-top: 4vh;
+}
+
+.popup.active .popup-panel {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+@media (max-width: 640px) {
+  .popup-panel {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+}
+
+/* 닫기 버튼 */
+.popup-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+  line-height: 1;
+}
+
+.popup-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+}
+
+/* 팝업 스크롤 영역 */
+.popup-scroll-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.popup-sentinel {
+  height: 1px;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* 팝업 내 로딩 */
+.popup-loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+/* ─────────────────────────────────────────
+   카드 블록 (팝업 내 콘텐츠 단위)
+───────────────────────────────────────── */
+.card-block {
+  position: relative;
+}
+
+.card-block + .card-block {
+  border-top: 1px solid var(--border);
+}
+
+/* 카드 헤더: 첫 이미지를 옅게 배경으로 */
+.card-block-header {
+  position: relative;
+  padding: 32px 48px 24px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.card-block-header-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.12;
+  filter: blur(2px);
+  transform: scale(1.05);
+}
+
+.card-block-title {
+  position: relative;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+/* Type B: 이미지 순차 표시 */
+.card-block-images {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-block-images img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Type A: iframe */
+.card-block-iframe-wrap {
+  width: 100%;
+  min-height: 500px;
+}
+
+.card-block-iframe-wrap iframe {
+  width: 100%;
+  min-height: 500px;
+  border: none;
+  display: block;
+}
+
+/* 팝업 내 빈 상태 */
+.popup-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 32px;
+  color: var(--text-muted);
+  text-align: center;
+  gap: 12px;
+}
+
+.popup-empty-icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+/* ─────────────────────────────────────────
+   이력서 팝업
+───────────────────────────────────────── */
+.resume-block-images {
+  display: flex;
+  flex-direction: column;
+}
+
+.resume-block-images img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ─────────────────────────────────────────
+   Go to Top 버튼
+───────────────────────────────────────── */
+.go-top-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 12px;
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 48px;
+  padding: 10px 0;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition:
+    opacity var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.go-top-btn.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.go-top-btn:hover {
+  background: rgba(190, 255, 0, 0.12);
+  color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+  border-color: rgba(190, 255, 0, 0.3);
+}
+
+/* body에 팝업 열렸을 때 스크롤 막기 */
+body.popup-open {
+  overflow: hidden;
+}
+
+/* ─────────────────────────────────────────
+   이력서 PDF 뷰어
+───────────────────────────────────────── */
+.resume-pdf-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.resume-pdf {
+  width: 100%;
+  flex: 1;
+  min-height: calc(90vh - 60px); /* 팝업 패널 높이 - 여백 */
+  border: none;
+  display: block;
+  background: #fff;
+}
