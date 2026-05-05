@@ -12,8 +12,33 @@
   ],
   "cards": [
     {
-      "id": "01_sample_gallery",
-      "title": "샘플 갤러리 (Type B)",
+      "id": "001_screenflow",
+      "title": "스크린 플로우를 잘 그립니다",
+      "type": "B"
+    },
+    {
+      "id": "002_doc",
+      "title": "개발 가이드 문서를 잘 만듭니다",
+      "type": "B"
+    },
+    {
+      "id": "003_thinking",
+      "title": "사용성 고민을 꾸준히 합니다",
+      "type": "B"
+    },
+    {
+      "id": "004_design",
+      "title": "디자인 컴포넌트 노우가 쌓였습니다",
+      "type": "B"
+    },
+    {
+      "id": "005_history",
+      "title": "초기 서비스 탄생 과정을 여러번 겪어봤습니다",
+      "type": "B"
+    },
+    {
+      "id": "006_etc",
+      "title": "짜투리 작업들입니다",
       "type": "B"
     },
     {
