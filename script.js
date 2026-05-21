@@ -11,12 +11,13 @@ const RESUME_DIR = 'resume_page';
 ───────────────────────────────────────── */
 let allCards          = [];       // cards.json에서 로드
 let popupIndices      = [];       // 현재 팝업에 로드된 카드 인덱스 목록
-let topObserver       = null;
-let bottomObserver    = null;
+let topObserver       = null;     // (미사용 — 하위 호환 유지)
+let bottomObserver    = null;     // (미사용 — 하위 호환 유지)
 let isLoadingNext     = false;
 let isLoadingPrev     = false;
+let popupScrollCheck  = null;     // 팝업 무한스크롤 scroll 핸들러 참조 (cleanup용)
 let activePopupScrollEl = null;   // 현재 열린 팝업 스크롤 컨테이너
-let popupScrollHandler  = null;   // 팝업 스크롤 이벤트 핸들러 참조
+let popupScrollHandler  = null;   // 팝업 goTop 스크롤 이벤트 핸들러 참조
 
 /* ─────────────────────────────────────────
    초기화
@@ -24,6 +25,7 @@ let popupScrollHandler  = null;   // 팝업 스크롤 이벤트 핸들러 참조
 document.addEventListener('DOMContentLoaded', async () => {
   initScrollUI();
   initIntroScroll();
+  initCardsParallax();
   await loadAndRenderCards();
   initCardPopup();
   initResumePopup();
@@ -105,7 +107,6 @@ function initIntroScroll() {
     line2:  document.getElementById('s1Line2'),
     chart:  document.getElementById('s1Chart'),
     suffix: document.getElementById('s1Suffix'),
-    footer: slides[0]?.querySelector('.slide-footer'),
     lPm:    document.getElementById('s1LabelPm'),
     lUiux:  document.getElementById('s1LabelUiux'),
     lGui:   document.getElementById('s1LabelGui'),
@@ -113,13 +114,11 @@ function initIntroScroll() {
   const s2 = {
     line1:  document.getElementById('s2Line1'),
     line2:  document.getElementById('s2Line2'),
-    footer: slides[1]?.querySelector('.slide-footer'),
   };
   const s3 = {
     line1:  document.getElementById('s3Line1'),
     line2:  document.getElementById('s3Line2'),
     line3:  document.getElementById('s3Line3'),
-    footer: slides[2]?.querySelector('.slide-footer'),
   };
 
   // 도넛 세그먼트 드로잉 헬퍼
@@ -141,7 +140,6 @@ function initIntroScroll() {
     [s1.line2,  540 ],
     [s1.chart,  780 ],
     [s1.suffix, 900 ],
-    [s1.footer, 1100],
   ].forEach(([el, delay]) => {
     if (!el) return;
     setTimeout(() => {
@@ -185,7 +183,7 @@ function initIntroScroll() {
   ];
 
   function clearS1Transitions() {
-    [s1.line1, s1.line2, s1.chart, s1.suffix, s1.footer,
+    [s1.line1, s1.line2, s1.chart, s1.suffix,
      s1.lPm, s1.lUiux, s1.lGui].forEach(el => {
       if (el) el.style.transition = 'none';
     });
@@ -225,14 +223,12 @@ function initIntroScroll() {
 
       const rev = ss(remap(progress, ph.enter, ph.reveal));
       if (idx === 0) {
-        animEl(s2.line1,  rev, 0.00, 0.45);
-        animEl(s2.line2,  rev, 0.22, 0.67);
-        animOp(s2.footer, rev, 0.50, 0.85);
+        animEl(s2.line1, rev, 0.00, 0.45);
+        animEl(s2.line2, rev, 0.22, 0.67);
       } else {
-        animEl(s3.line1,  rev, 0.00, 0.40);
-        animEl(s3.line2,  rev, 0.20, 0.60);
-        animEl(s3.line3,  rev, 0.38, 0.78);
-        animOp(s3.footer, rev, 0.60, 0.90);
+        animEl(s3.line1, rev, 0.00, 0.40);
+        animEl(s3.line2, rev, 0.20, 0.60);
+        animEl(s3.line3, rev, 0.38, 0.78);
       }
     });
 
@@ -274,6 +270,53 @@ function ss(t) { return t * t * (3 - 2 * t); }
 
 // clamp 0–1
 function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+
+/* ─────────────────────────────────────────
+   카드 리스트 패럴랙스 Peek
+   인트로 스크롤 중 카드 섹션이 하단에서 점진적으로 올라오며 노출.
+   ─ 인트로 중(progress 0→1): translateY로 카드를 뷰포트 하단에 핀(pin)
+   ─ 인트로 후(soft-landing): transform 을 0으로 서서히 돌리며 자연 스크롤 연결
+───────────────────────────────────────── */
+function initCardsParallax() {
+  const introSection = document.getElementById('intro');
+  const cardsSection = document.getElementById('cards');
+
+  function update() {
+    const vh          = window.innerHeight;
+    const introTop    = introSection.offsetTop;
+    const introH      = introSection.offsetHeight;   // 280vh
+    const introUsable = introH - vh;                 // scroll range of intro
+    const cardsDocY   = introTop + introH;            // absolute doc-Y of cards top
+    const scrollY     = window.scrollY;
+    const progress    = clamp01((scrollY - introTop) / introUsable);
+
+    // 뷰포트 기준 카드 상단 목표 위치: 85vh → 60vh (progress 0 → 1)
+    const targetVY = (0.85 - ss(progress) * 0.25) * vh;
+
+    let translateY, opacity;
+
+    if (scrollY <= introTop + introUsable) {
+      // ── 인트로 진행 중: 카드를 targetVY에 핀 ──
+      // viewport_Y = cardsDocY + translateY − scrollY = targetVY
+      // ∴ translateY = targetVY + scrollY − cardsDocY
+      translateY = targetVY + scrollY - cardsDocY;
+      opacity    = 0.3 + ss(progress) * 0.7;         // 0.30 → 1.00
+    } else {
+      // ── 인트로 종료 후: 고정 오프셋 유지 → 슬라이드 텍스트와 함께 자연 스크롤 ──
+      // progress=1 시점의 translateY = (0.60*vh) − vh = −0.40*vh (baseTY)
+      // translateY 를 고정하면 카드가 문서 흐름과 동일한 속도로 스크롤되어
+      // 슬라이드3 텍스트와의 간격이 자연스럽게 유지됨.
+      translateY = (0.60 * vh) - vh;                 // ≈ −0.40*vh (고정)
+      opacity    = 1;
+    }
+
+    cardsSection.style.transform = `translateY(${Math.round(translateY)}px)`;
+    cardsSection.style.opacity   = String(opacity);
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+  requestAnimationFrame(update);
+}
 
 /* ─────────────────────────────────────────
    카드 로드 & 렌더링
@@ -371,12 +414,15 @@ async function openCardPopup(cardIndex) {
 }
 
 function closeCardPopup() {
-  const popup = document.getElementById('cardPopup');
+  const popup      = document.getElementById('cardPopup');
+  const scrollWrap = document.getElementById('cardPopupScroll');
   popup.classList.remove('active');
   document.body.classList.remove('popup-open');
   teardownPopupGoTop();
-  if (topObserver)    topObserver.disconnect();
-  if (bottomObserver) bottomObserver.disconnect();
+  if (popupScrollCheck) {
+    scrollWrap.removeEventListener('scroll', popupScrollCheck);
+    popupScrollCheck = null;
+  }
 }
 
 /* 팝업 내 카드 블록 추가 */
@@ -404,7 +450,7 @@ async function appendCardBlock(cardIndex, position) {
   `;
 
   if (position === 'start') {
-    const scrollWrap  = document.getElementById('cardPopupScroll');
+    const scrollWrap   = document.getElementById('cardPopupScroll');
     const scrollBefore = scrollWrap.scrollTop;
     const heightBefore = blocksEl.scrollHeight;
 
@@ -413,8 +459,21 @@ async function appendCardBlock(cardIndex, position) {
 
     // 스크롤 위치 보정 (prepend 후 뷰포트 유지)
     requestAnimationFrame(() => {
-      const heightAfter = blocksEl.scrollHeight;
-      scrollWrap.scrollTop = scrollBefore + (heightAfter - heightBefore);
+      let prevH = blocksEl.scrollHeight;
+      scrollWrap.scrollTop = scrollBefore + (prevH - heightBefore);
+
+      // 이미지·iframe 등 비동기 콘텐츠 로딩으로 블록 높이가 변할 때마다 scrollTop 추가 보정.
+      // 보정 없이는 삽입된 블록이 커질수록 목표 카드가 뷰포트 아래로 밀려 중간부터 보이는 버그 발생.
+      const ro = new ResizeObserver(() => {
+        const newH = blocksEl.scrollHeight;
+        if (newH !== prevH) {
+          scrollWrap.scrollTop += newH - prevH;
+          prevH = newH;
+        }
+      });
+      ro.observe(block);
+      // 콘텐츠 로딩이 완료될 충분한 시간 후 해제 (이후 변화는 사용자 스크롤로 처리)
+      setTimeout(() => ro.disconnect(), 5000);
     });
   } else {
     blocksEl.appendChild(block);
@@ -465,40 +524,78 @@ async function loadCardBlockBody(card, cardIndex) {
   }
 }
 
-/* 팝업 무한 스크롤 (이전/다음 카드 자동 로딩) */
+/* 팝업 무한 스크롤 (이전/다음 카드 자동 로딩)
+ *
+ * ── 설계 원칙 ──
+ * IntersectionObserver 방식 → 방향 감지 방식 모두 scroll anchoring 등
+ * 브라우저 내부 scrollTop 변경에 취약했음.
+ *
+ * 최종 해결: prevEnabled 플래그 방식.
+ *   - prevEnabled: 사용자가 EDGE_PX(300px) 이상 스크롤한 후에만 true
+ *   - 이전 카드: prevEnabled=true 이고 위로 스크롤해서 상단 EDGE_PX 이내일 때만 로드
+ *     → 팝업 최초 진입 시 브라우저가 scroll anchoring 등으로 scrollTop을 건드려도
+ *       prevEnabled=false 이므로 이전 카드가 절대 로드되지 않음
+ *   - 다음 카드: 하단 EDGE_PX 이내일 때 로드 (방향 무관)
+ */
 function setupPopupInfiniteScroll() {
-  const scrollWrap    = document.getElementById('cardPopupScroll');
-  const topSentinel   = document.getElementById('cardTopSentinel');
-  const bottomSentinel = document.getElementById('cardBottomSentinel');
+  const scrollWrap = document.getElementById('cardPopupScroll');
+  const EDGE_PX    = 300;
+  let   lastTop    = scrollWrap.scrollTop;
+  let   prevEnabled = false; // 사용자가 실제로 내려간 후에만 이전 카드 로딩 허용
 
-  const opts = {
-    root: scrollWrap,
-    rootMargin: '200px 0px',
-    threshold: 0,
-  };
+  async function check() {
+    const top = scrollWrap.scrollTop;
 
-  bottomObserver = new IntersectionObserver(async (entries) => {
-    if (!entries[0].isIntersecting || isLoadingNext) return;
-    const last = popupIndices[popupIndices.length - 1];
-    if (last < allCards.length - 1) {
-      isLoadingNext = true;
-      await appendCardBlock(last + 1, 'end');
-      isLoadingNext = false;
+    // 사용자가 EDGE_PX 이상 내려갔을 때 이전 카드 로딩 허용
+    if (!prevEnabled && top >= EDGE_PX) {
+      prevEnabled = true;
     }
-  }, opts);
 
-  topObserver = new IntersectionObserver(async (entries) => {
-    if (!entries[0].isIntersecting || isLoadingPrev) return;
-    const first = popupIndices[0];
-    if (first > 0) {
-      isLoadingPrev = true;
-      await appendCardBlock(first - 1, 'start');
-      isLoadingPrev = false;
+    const scrolledUp = top < lastTop;
+    lastTop = top;
+
+    // ── 이전 카드: prevEnabled 이후, 위로 스크롤 + 상단 EDGE_PX 이내 ──
+    if (prevEnabled && scrolledUp && top < EDGE_PX && !isLoadingPrev) {
+      const first = popupIndices[0];
+      if (first > 0) {
+        isLoadingPrev = true;
+        await appendCardBlock(first - 1, 'start');
+        isLoadingPrev = false;
+      }
     }
-  }, opts);
 
-  bottomObserver.observe(bottomSentinel);
-  topObserver.observe(topSentinel);
+    // ── 다음 카드: 하단 EDGE_PX 이내 (방향 무관) ──
+    const remaining = scrollWrap.scrollHeight - top - scrollWrap.clientHeight;
+    if (remaining < EDGE_PX && !isLoadingNext) {
+      const last = popupIndices[popupIndices.length - 1];
+      if (last < allCards.length - 1) {
+        isLoadingNext = true;
+        await appendCardBlock(last + 1, 'end');
+        isLoadingNext = false;
+      }
+    }
+  }
+
+  // 기존 리스너 정리
+  if (popupScrollCheck) {
+    scrollWrap.removeEventListener('scroll', popupScrollCheck);
+  }
+  popupScrollCheck = check;
+  scrollWrap.addEventListener('scroll', check, { passive: true });
+
+  // 초기 체크: 첫 카드가 짧아 다음 카드가 필요한 경우 대응
+  // (이전 카드는 prevEnabled=false 이므로 로드 안 됨)
+  requestAnimationFrame(async () => {
+    const remaining = scrollWrap.scrollHeight - scrollWrap.scrollTop - scrollWrap.clientHeight;
+    if (remaining < EDGE_PX && !isLoadingNext) {
+      const last = popupIndices[popupIndices.length - 1];
+      if (last < allCards.length - 1) {
+        isLoadingNext = true;
+        await appendCardBlock(last + 1, 'end');
+        isLoadingNext = false;
+      }
+    }
+  });
 }
 
 /* ─────────────────────────────────────────
