@@ -2,7 +2,7 @@
    CSS 변수 & 리셋
 ───────────────────────────────────────── */
 :root {
-  --bg:           #0d0d0d;
+  --bg:           #eeeeee;
   --bg-card:      #181818;
   --bg-popup:     #111111;
   --accent:       #beff00;
@@ -42,12 +42,12 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 ───────────────────────────────────────── */
 #scrollProgressBar {
   position: fixed;
-  top: 0;
+  bottom: 0;
   left: 0;
   height: 2px;
   width: 0%;
   background: var(--accent);
-  z-index: 9999;
+  z-index: 99;
   transition: width 0.1s linear;
   box-shadow: 0 0 8px var(--accent-glow);
 }
@@ -185,30 +185,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   /* 나머지 위치/크기는 .slide-big-line 상속 */
 }
 
-/* 슬라이드 푸터 */
-.slide-footer {
-  position: absolute;
-  bottom: 5vh;
-  left: 9vw;
-  right: 9vw;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  opacity: 0;
-  will-change: opacity;
-}
 
-.slide-footer-brand {
-  font-size: 11px;
-  color: rgba(0,0,0,0.25);
-  letter-spacing: 0.06em;
-}
-
-.slide-footer-num {
-  font-size: 11px;
-  color: rgba(0,0,0,0.20);
-  font-variant-numeric: tabular-nums;
-}
 
 /* ── 슬라이드 3: 강조색 — 밝은 배경에서 가독성 있는 골드 ── */
 .quote-mark {
@@ -331,12 +308,13 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 /* 닷 네비게이터 */
 .intro-dots {
   position: absolute;
-  bottom: 68px;
+  bottom: 20%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 8px;
   z-index: 10;
+  flex-direction: column;
 }
 
 .intro-dot {
@@ -355,7 +333,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 /* 스크롤 유도 */
 .intro-cue {
   position: absolute;
-  bottom: 80px;
+  bottom: 23%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -390,8 +368,9 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 ───────────────────────────────────────── */
 .cards-section {
   position: relative;
-  z-index: 2;
-  background: var(--bg);
+  z-index: 10;
+  background: transparent;               /* 검은 배경 제거 → 인트로와 통일감 */
+  will-change: transform, opacity;
 }
 
 .cards-section-inner {
@@ -419,12 +398,13 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .card-item {
   position: relative;
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 0px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
   cursor: pointer;
   opacity: 0;
   transform: translateY(28px);
+  box-shadow: 0 4px 20px rgba(88, 86, 84, 0.2), 0 1px 4px rgba(88, 86, 84, 0.12); /* 기본 부유 그림자 */
   transition:
     opacity 0.5s var(--ease),
     transform 0.5s var(--ease),
@@ -438,7 +418,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 
 .card-item:hover {
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(190, 255, 0, 0.2);
+  box-shadow: 0 16px 48px rgba(88, 86, 84, 0.55), 0 0 0 1px rgba(190, 255, 0, 0.2); /* hover: 더 깊고 넓게 */
   border-color: rgba(190, 255, 0, 0.2);
   transform: translateY(-4px);
 }
