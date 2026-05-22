@@ -15,9 +15,10 @@ let topObserver       = null;     // (미사용 — 하위 호환 유지)
 let bottomObserver    = null;     // (미사용 — 하위 호환 유지)
 let isLoadingNext     = false;
 let isLoadingPrev     = false;
-let popupScrollCheck  = null;     // 팝업 무한스크롤 scroll 핸들러 참조 (cleanup용)
+let popupScrollCheck    = null;   // 팝업 무한스크롤 scroll 핸들러 참조 (cleanup용)
 let activePopupScrollEl = null;   // 현재 열린 팝업 스크롤 컨테이너
 let popupScrollHandler  = null;   // 팝업 goTop 스크롤 이벤트 핸들러 참조
+let navTrackHandler     = null;   // 팝업 nav 활성 카드 추적 scroll 핸들러
 
 /* ─────────────────────────────────────────
    초기화
@@ -385,6 +386,7 @@ async function buildCardElement(card, index) {
 function initCardPopup() {
   document.getElementById('cardPopupClose').addEventListener('click', closeCardPopup);
   document.getElementById('cardPopupBackdrop').addEventListener('click', closeCardPopup);
+  initPopupNav();
 }
 
 async function openCardPopup(cardIndex) {
@@ -409,8 +411,10 @@ async function openCardPopup(cardIndex) {
   // 첫 카드 로드
   await appendCardBlock(cardIndex, 'end');
 
-  // 무한 스크롤 설정
+  // 무한 스크롤 + 네비게이션 설정
   setupPopupInfiniteScroll();
+  updateNavActive(cardIndex);
+  setupNavScrollTracking(scrollWrap);
 }
 
 function closeCardPopup() {
@@ -422,6 +426,201 @@ function closeCardPopup() {
   if (popupScrollCheck) {
     scrollWrap.removeEventListener('scroll', popupScrollCheck);
     popupScrollCheck = null;
+  }
+  if (navTrackHandler) {
+    scrollWrap.removeEventListener('scroll', navTrackHandler);
+    navTrackHandler = null;
+  }
+}
+
+/* ─────────────────────────────────────────
+   카드 팝업 — 상단 썸네일 네비게이션
+───────────────────────────────────────── */
+
+/** 모든 카드 nav 아이템을 한 번 렌더링 (initCardPopup 에서 1회 호출) */
+function initPopupNav() {
+  const track   = document.getElementById('cardNavTrack');
+  const btnPrev = document.getElementById('cardNavPrev');
+  const btnNext = document.getElementById('cardNavNext');
+  if (!track) return;
+
+  track.innerHTML = '';
+
+  for (let i = 0; i < allCards.length; i++) {
+    const card = allCards[i];
+    const item = document.createElement('button');
+    item.className = 'popup-nav-item';
+    item.dataset.navIndex = i;
+    item.setAttribute('aria-label', card.title);
+    item.innerHTML = `
+      <div class="popup-nav-thumb" id="nav-thumb-${i}">
+        <span class="popup-nav-thumb-placeholder">◻</span>
+      </div>
+    `;
+    item.addEventListener('click', () => onNavItemClick(i));
+    track.appendChild(item);
+
+    // 썸네일 이미지 비동기 로딩 (UI 블로킹 없음, 카드 그리드에서 캐시됨)
+    fetchFirstImage(`${CARD_DIR}/${card.id}`).then(url => {
+      const thumb = document.getElementById(`nav-thumb-${i}`);
+      if (thumb && url) {
+        thumb.innerHTML = `<img src="${url}" alt="${escapeHtml(card.title)}" loading="lazy">`;
+      }
+    });
+  }
+
+  // 화살표: 트랙 스크롤에 따라 표시/숨기기
+  const updateArrows = () => {
+    btnPrev.classList.toggle('hidden', track.scrollLeft <= 2);
+    btnNext.classList.toggle('hidden',
+      track.scrollLeft + track.clientWidth >= track.scrollWidth - 2);
+  };
+  track.addEventListener('scroll', updateArrows, { passive: true });
+  // ResizeObserver로 track 너비 변동 시에도 화살표 상태 업데이트
+  new ResizeObserver(updateArrows).observe(track);
+
+  btnPrev.addEventListener('click', () => track.scrollBy({ left: -220, behavior: 'smooth' }));
+  btnNext.addEventListener('click', () => track.scrollBy({ left:  220, behavior: 'smooth' }));
+
+  updateArrows();
+}
+
+/** nav 활성 아이템 하이라이트 + 트랙 자동 스크롤 */
+function updateNavActive(cardIndex) {
+  const track = document.getElementById('cardNavTrack');
+  if (!track) return;
+
+  track.querySelectorAll('.popup-nav-item').forEach(item => {
+    item.classList.toggle('active', parseInt(item.dataset.navIndex) === cardIndex);
+  });
+
+  // 활성 아이템을 트랙 중앙으로 부드럽게 스크롤
+  const activeItem = track.querySelector(`.popup-nav-item[data-nav-index="${cardIndex}"]`);
+  if (activeItem) {
+    const targetLeft = activeItem.offsetLeft - (track.clientWidth / 2) + (activeItem.offsetWidth / 2);
+    track.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+  }
+}
+
+/** 팝업 스크롤에 따라 활성 카드를 자동 감지해 nav 업데이트 */
+function setupNavScrollTracking(scrollWrap) {
+  const blocksEl = document.getElementById('cardPopupBlocks');
+
+  // 기존 핸들러 정리
+  if (navTrackHandler) {
+    scrollWrap.removeEventListener('scroll', navTrackHandler);
+  }
+
+  navTrackHandler = () => {
+    const blocks = blocksEl.querySelectorAll('.card-block');
+    if (!blocks.length) return;
+
+    // 뷰포트 상단에서 35% 지점에 걸쳐있는 카드를 '현재 카드'로 판단
+    const mid = scrollWrap.scrollTop + scrollWrap.clientHeight * 0.35;
+    let activeIdx = parseInt(blocks[0].dataset.cardIndex);
+
+    blocks.forEach(block => {
+      if (block.offsetTop <= mid) {
+        activeIdx = parseInt(block.dataset.cardIndex);
+      }
+    });
+
+    updateNavActive(activeIdx);
+  };
+
+  scrollWrap.addEventListener('scroll', navTrackHandler, { passive: true });
+}
+
+/** nav 아이템 클릭 처리 */
+async function onNavItemClick(cardIndex) {
+  const scrollWrap = document.getElementById('cardPopupScroll');
+  const blocksEl   = document.getElementById('cardPopupBlocks');
+
+  if (popupIndices.includes(cardIndex)) {
+    // ── 이미 로드된 카드: 해당 블록 상단으로 스크롤 ──
+    const block = blocksEl.querySelector(`.card-block[data-card-index="${cardIndex}"]`);
+    if (block) {
+      // ── 레이아웃-어웨어 커스텀 스무스 스크롤 ──
+      // getBoundingClientRect를 매 프레임 재계산하므로, 이전 카드의 이미지·iframe이
+      // 로딩되며 레이아웃이 변해도 타깃 위치를 자동으로 추적한다.
+      // (기존: 클릭 시점 1회 계산 → 이후 레이아웃 변화에 취약)
+      if (window._navScrollRafId) {
+        cancelAnimationFrame(window._navScrollRafId);
+        window._navScrollRafId = null;
+      }
+
+      const startTime  = performance.now();
+      const MAX_MS     = 700;
+      const wrapBcrTop = scrollWrap.getBoundingClientRect().top; // wrap 위치는 고정
+
+      const tick = () => {
+        if (!block.isConnected) { window._navScrollRafId = null; return; }
+
+        const elapsed = performance.now() - startTime;
+        const diff    = block.getBoundingClientRect().top - wrapBcrTop;
+
+        // 타깃에 충분히 가까우면 종료
+        if (Math.abs(diff) < 1.5) { window._navScrollRafId = null; return; }
+
+        // 타임아웃: 최종 위치로 즉시 스냅
+        if (elapsed >= MAX_MS) {
+          scrollWrap.scrollTop += diff;
+          window._navScrollRafId = null;
+          return;
+        }
+
+        // 남은 거리의 18%씩 이동 (지수 감속 → 자연스러운 ease-out)
+        scrollWrap.scrollTop += diff * 0.18;
+        window._navScrollRafId = requestAnimationFrame(tick);
+      };
+
+      window._navScrollRafId = requestAnimationFrame(tick);
+    }
+
+  } else {
+    // ── 미로드 카드: fade-out → 리셋 → 로드 → fade-in ──
+    const navItem = document.querySelector(`.popup-nav-item[data-nav-index="${cardIndex}"]`);
+    const thumb   = document.getElementById(`nav-thumb-${cardIndex}`);
+
+    // 1. 현재 콘텐츠 페이드 아웃 + nav 로딩 스피너 동시 시작
+    blocksEl.classList.add('fading');
+    navItem?.classList.add('nav-loading');
+    if (thumb) {
+      const overlay = document.createElement('div');
+      overlay.className = 'nav-loading-overlay';
+      thumb.appendChild(overlay);
+    }
+
+    // 2. 페이드 아웃 완료 대기 (CSS transition 0.22s 와 맞춤)
+    await new Promise(r => setTimeout(r, 240));
+
+    // 3. 콘텐츠 리셋
+    blocksEl.innerHTML = '';
+    popupIndices   = [];
+    isLoadingNext  = false;
+    isLoadingPrev  = false;
+    if (popupScrollCheck) {
+      scrollWrap.removeEventListener('scroll', popupScrollCheck);
+      popupScrollCheck = null;
+    }
+    if (navTrackHandler) {
+      scrollWrap.removeEventListener('scroll', navTrackHandler);
+      navTrackHandler = null;
+    }
+    scrollWrap.scrollTop = 0;
+
+    // 4. 새 카드 로드
+    await appendCardBlock(cardIndex, 'end');
+
+    // 5. 스피너 제거 + 페이드 인
+    navItem?.classList.remove('nav-loading');
+    thumb?.querySelector('.nav-loading-overlay')?.remove();
+    blocksEl.classList.remove('fading');
+
+    // 6. 무한 스크롤 + nav 재설정
+    setupPopupInfiniteScroll();
+    updateNavActive(cardIndex);
+    setupNavScrollTracking(scrollWrap);
   }
 }
 
