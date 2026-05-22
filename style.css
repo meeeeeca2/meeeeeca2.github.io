@@ -97,7 +97,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 8px 18px;
-  border-radius: var(--radius-sm);
+  border-radius: 2em;
   transition: box-shadow var(--dur) var(--ease), transform 0.15s var(--ease);
 }
 
@@ -528,8 +528,11 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   inset: 0;
   z-index: 200;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: 0.5vh;
+  gap: 0.5vh;
   pointer-events: none;
   visibility: hidden;
 }
@@ -559,7 +562,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   position: relative;
   z-index: 1;
   width: min(97vw, 1920px);
-  height: 96vh;
+  flex: 1;
+  min-height: 0;
   background: var(--bg-popup);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -570,7 +574,6 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   transform: translateY(20px) scale(0.97);
   transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
   box-shadow: 0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
-  margin-top: 4vh;
 }
 
 .popup.active .popup-panel {
@@ -581,7 +584,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 @media (max-width: 640px) {
   .popup-panel {
     width: 100vw;
-    height: 100vh;
+    height: auto;
     border-radius: 0;
     border: none;
   }
@@ -611,6 +614,145 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   color: var(--text);
 }
 
+/* ── 카드 목록 네비게이션 (dim 영역 위에 배치) ── */
+.popup-nav {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  width: min(97vw, 1920px);
+  height: 80px;
+  padding: 0 40px;
+  flex-shrink: 0;
+}
+
+.popup-nav-track {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  padding: 6px 2px;
+  scroll-behavior: smooth;
+}
+.popup-nav-track::-webkit-scrollbar { display: none; }
+
+/* 네비 아이템: 썸네일만, 크기/투명도로 활성화 구분 */
+.popup-nav-item {
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: none;
+  padding: 0;
+  opacity: 0.38;
+  user-select: none;
+  transition:
+    opacity 0.25s var(--ease),
+    border-color 0.25s var(--ease);
+}
+
+.popup-nav-item:hover:not(.active):not(.nav-loading) {
+  opacity: 0.68;
+}
+
+.popup-nav-item.active {
+  opacity: 1;
+  border-color: var(--accent);
+}
+
+.popup-nav-item.nav-loading {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 썸네일: 비활성은 작게, 활성은 크게 */
+.popup-nav-thumb {
+  position: relative;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 48px;
+  transition: width 0.25s var(--ease), height 0.25s var(--ease);
+}
+
+.popup-nav-item.active .popup-nav-thumb {
+  width: 96px;
+  height: 68px;
+}
+
+.popup-nav-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.popup-nav-thumb-placeholder {
+  font-size: 18px;
+  opacity: 0.25;
+  line-height: 1;
+}
+
+/* 썸네일 로딩 오버레이 */
+.nav-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.nav-loading-overlay::after {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* 화살표 버튼 */
+.popup-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(20, 20, 20, 0.85);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1;
+  flex-shrink: 0;
+  transition: color 0.18s ease, background 0.18s ease, opacity 0.2s ease;
+}
+
+.popup-nav-arrow:hover {
+  color: var(--text);
+  background: rgba(50, 50, 50, 0.95);
+}
+
+.popup-nav-arrow.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.popup-nav-prev { left: 4px; }
+.popup-nav-next { right: 4px; }
+
 /* 팝업 스크롤 영역 */
 .popup-scroll-wrap {
   flex: 1;
@@ -624,6 +766,14 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   height: 1px;
   width: 100%;
   pointer-events: none;
+}
+
+/* 팝업 블록 컨테이너 — 카드 전환 시 fade 트랜지션 */
+.popup-blocks {
+  transition: opacity 0.22s var(--ease);
+}
+.popup-blocks.fading {
+  opacity: 0;
 }
 
 /* 팝업 내 로딩 */
