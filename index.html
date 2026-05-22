@@ -16,7 +16,7 @@
 
   <!-- 고정 헤더 -->
   <header class="site-header" id="siteHeader">
-    <div class="header-brand">JeongYS</div>
+    <div class="header-brand">Portfolio</div>
     <div class="header-actions">
       <button class="btn-resume" id="resumeBtn">Resume 열람하기</button>
     </div>
@@ -67,10 +67,6 @@
             <div class="slide-big-line s1-suffix" id="s1Suffix">입니다.</div>
           </div>
 
-          <div class="slide-footer">
-            <span class="slide-footer-brand">2023 Portfolio</span>
-            <span class="slide-footer-num">1</span>
-          </div>
         </div>
       </div>
 
@@ -80,10 +76,6 @@
           <div class="slide-heading">
             <div class="slide-big-line" id="s2Line1">제가 주로 해왔던 작업을</div>
             <div class="slide-big-line" id="s2Line2">나열해 봤습니다.</div>
-          </div>
-          <div class="slide-footer">
-            <span></span>
-            <span class="slide-footer-num">2</span>
           </div>
         </div>
       </div>
@@ -97,10 +89,6 @@
             </div>
             <div class="slide-big-line" id="s3Line2">써먹을 만한 능력이 있나?!"</div>
             <div class="slide-big-line" id="s3Line3">싶은게 있었으면 좋겠군요.</div>
-          </div>
-          <div class="slide-footer">
-            <span></span>
-            <span class="slide-footer-num">3</span>
           </div>
         </div>
       </div>
@@ -136,6 +124,18 @@
   <!-- ───────────── 카드 상세 팝업 ───────────── -->
   <div id="cardPopup" class="popup" role="dialog" aria-modal="true" aria-label="포트폴리오 상세">
     <div class="popup-backdrop" id="cardPopupBackdrop"></div>
+
+    <!-- ── 카드 목록 네비게이션 (dim 영역에 위치) ── -->
+    <nav class="popup-nav" id="cardPopupNav" aria-label="카드 목록 네비게이션">
+      <button class="popup-nav-arrow popup-nav-prev" id="cardNavPrev" aria-label="이전">
+        <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M6 1L1 6L6 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="popup-nav-track" id="cardNavTrack"></div>
+      <button class="popup-nav-arrow popup-nav-next" id="cardNavNext" aria-label="다음">
+        <svg width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1L6 6L1 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </nav>
+
     <div class="popup-panel" id="cardPopupPanel">
       <button class="popup-close" id="cardPopupClose" aria-label="닫기">✕</button>
       <div class="popup-scroll-wrap" id="cardPopupScroll">
@@ -172,6 +172,6 @@
     <span>Top</span>
   </button>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=9"></script>
 </body>
 </html>
