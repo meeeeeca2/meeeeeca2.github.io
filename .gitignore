@@ -1,0 +1,20 @@
+# Mac system files
+.DS_Store
+**/.DS_Store
+
+# Claude Code files (not for deployment)
+.claude/
+CLAUDE.md
+agents/
+
+# Local dev tools
+server.py
+generate_manifests.py
+api.php
+
+# Temp folders
+무제 폴더/
+card_page/009_del_test/
+card_page/010_img_test/
+card_page/010_img_test_B/
+card_page/temp_saved_test/

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "DIY 포트폴리오 사이트를 만들다",
+    "tags": [],
+    "description": "",
+    "thumb": "images/1779431423953.png",
+    "fullWidth": false
+  },
+  "blocks": [
+    {
+      "id": "bmpgjfj73ic1",
+      "type": "h1",
+      "text": "워드프레스가 한참 유행하던 시절에",
+      "textColor": "#D9730D"
+    },
+    {
+      "id": "bmpgjiqw2waw",
+      "type": "p",
+      "text": "포트폴리오 사이트를 제작하고는 유지 보수가 점점 어려워 지고 버그가 발생하는 등 문제가 있어 수동으로 사이트를 제작하게 되었다."
+    },
+    {
+      "id": "bmpgjp947c1p",
+      "type": "p",
+      "text": ""
+    },
+    {
+      "id": "bmpgjpniwkda",
+      "type": "h3",
+      "text": "1차 도전"
+    },
+    {
+      "id": "bmpgjfj735du",
+      "type": "p",
+      "text": "AI가 발전하기 시작한 2025년 초에 무료 모델에서 사이트를 구축을 해보려 했지만 여러 난관에 직면하게 되었고 결국 단순하게 이미지를 업로드하는데서 그치는 포트폴리오 사이트를 만들었다."
+    },
+    {
+      "id": "bmpgjlzu0lgi",
+      "type": "p",
+      "text": ""
+    },
+    {
+      "id": "bmpgjm09e9u8",
+      "type": "h3",
+      "text": "2차 도전"
+    },
+    {
+      "id": "bmpgjm2cv5dc",
+      "type": "p",
+      "text": "AI가 상당히 발전을 한 2026년 5월에 클로드 Pro 모델을 구독하여 바이브 코딩에 본격적인 시동을 걸었다."
+    },
+    {
+      "id": "bmpgjnxpuw1f",
+      "type": "p",
+      "text": "하여 지금 보고 있는 이 포트폴리오 사이트를 구축하게 되었다."
+    },
+    {
+      "id": "bmpgjiy0gdgm",
+      "type": "img",
+      "src": "images/1779431423953.png",
+      "caption": ""
+    },
+    {
+      "id": "bmpgjpevjfw4",
+      "type": "divider"
+    }
+  ]
+}
