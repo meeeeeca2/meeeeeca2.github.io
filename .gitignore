@@ -11,10 +11,19 @@ agents/
 server.py
 generate_manifests.py
 api.php
+editor.html
+editor.css
+editor.js
+
+# Backup files (사고 복구 / 자동 백업 파일들)
+*.bak-reset
+*.bak.*
+content.json.bak.*
 
 # Temp folders
 무제 폴더/
 card_page/009_del_test/
 card_page/010_img_test/
 card_page/010_img_test_B/
+card_page/011_back_test/
 card_page/temp_saved_test/

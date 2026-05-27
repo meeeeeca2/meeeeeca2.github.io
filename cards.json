@@ -5,12 +5,18 @@
     "title: 카드 및 상세 화면에 표시되는 제목",
     "type: 'A' = 커스텀 HTML (card_page/{id}/index.html 사용)",
     "       'B' = 이미지 자동 표시 (card_page/{id}/ 폴더에 이미지 추가)",
+    "       'M' = 블록 에디터 (card_page/{id}/content.json 사용)",
     "",
     "카드 추가: 이 배열에 객체 추가 + card_page/{id}/ 폴더 생성",
     "카드 제거: 이 배열에서 해당 객체 삭제",
     "순서 변경: 배열 내 객체 순서 변경"
   ],
   "cards": [
+    {
+      "id": "010_img_test_B",
+      "title": "이미지 및 컬럼 테스트 2",
+      "type": "M"
+    },
     {
       "id": "001_screenflow",
       "title": "스크린 플로우를 잘 그립니다",
@@ -45,6 +51,28 @@
       "id": "02_custom_page",
       "title": "커스텀 페이지 (Type A)",
       "type": "A"
+    },
+    {
+      "id": "008_portfoliosite",
+      "title": "DIY 포트폴리오 사이트를 만들다",
+      "type": "M"
+    },
+    {
+      "id": "009_del_test",
+      "title": "test",
+      "type": "M"
+    },
+    {
+      "id": "010_img_test",
+      "title": "이미지 테스트",
+      "type": "M",
+      "thumb": "images/1779625238120.png"
+    },
+    {
+      "id": "011_back_test",
+      "title": "test",
+      "type": "M",
+      "thumb": "images/1779871489758.png"
     }
   ]
 }

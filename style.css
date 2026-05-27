@@ -426,7 +426,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .card-thumb {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 3.5;
   background: #1e1e1e;
   background-size: cover;
   background-position: center;
@@ -462,44 +462,33 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   font-size: 28px;
 }
 
+/* card-meta: 이미지 위 하단 오버레이 배치 */
 .card-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   padding: 18px 20px 20px;
+  z-index: 2;
+  pointer-events: none; /* 카드 클릭 영역 그대로 유지 */
 }
 
 .card-title {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
   line-height: 1.4;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+/* card-type-badge: 숨김 (사용자 결정) */
 .card-type-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  text-transform: uppercase;
+  display: none;
 }
-
-.card-type-badge::before {
-  content: '';
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--text-dim);
-}
-
-.card-type-badge.type-a::before { background: #7b9fff; }
-.card-type-badge.type-b::before { background: var(--accent); }
 
 /* 로딩 스피너 */
 .cards-loading {
@@ -819,10 +808,10 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   position: relative;
   font-size: 26px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--accent);
   letter-spacing: -0.02em;
   line-height: 1.3;
-  display: none;
+  display: flex;
 }
 
 /* Type B: 이미지 순차 표시 */
@@ -950,4 +939,266 @@ body.popup-open {
   border: none;
   display: block;
   background: #fff;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   Type M 블록 렌더링 CSS (editor.css 의 .ed-* 미러링 + L31 fix)
+
+   핵심 패턴:
+   - 컨테이너 (.m-columns, .m-img-row) 폭 1200px 고정 (16×75)
+     → col.w / row-w = n 은 sum 무관 항상 n×75px 시각 (L31)
+   - .m-figure breakout = w*75 > 760 일 때 viewport 기준 escape
+   - .m-figure.m-figure-col-item = 컬럼 안 100% 채움
+   - 캡션 overlay = hover/touch 시 노출
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Type M 콘텐츠 컨테이너 ── */
+.type-m-content {
+  padding: 32px 40px 40px;
+  max-width: 760px;
+  margin: 0 auto;
+  font-size: 17px;
+  font-weight: 100;
+  line-height: 1.8;
+  color: var(--text, #f0f0f0);
+}
+.type-m-content.full-width {
+  max-width: none;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+.type-m-content > * + * { margin-top: 10px; }
+.type-m-content > .m-h1:first-child,
+.type-m-content > .m-h2:first-child,
+.type-m-content > .m-h3:first-child { margin-top: 0; }
+
+/* ── 텍스트 블록 ── */
+.m-h1 { font-size: 28px; font-weight: 700; line-height: 1.3; margin: 24px 0 12px; }
+.m-h2 { font-size: 22px; font-weight: 700; line-height: 1.3; margin: 20px 0 10px; }
+.m-h3 { font-size: 18px; font-weight: 700; line-height: 1.4; margin: 16px 0 8px; }
+.m-p  { margin: 6px 0; word-break: keep-all; }
+.m-quote {
+  margin: 12px 0;
+  padding: 6px 16px;
+  border-left: 3px solid var(--accent, #beff00);
+  color: var(--text-muted, #aaa);
+  font-style: italic;
+}
+
+/* ── 콜아웃 ── */
+.m-callout {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 6px;
+  margin: 10px 0;
+}
+.m-callout-emoji { flex-shrink: 0; font-size: 20px; line-height: 1.4; }
+.m-callout-text  { flex: 1; }
+
+/* ── 목록 ── */
+.m-ul, .m-ol { margin: 6px 0 6px 20px; padding-left: 8px; }
+.m-ul li, .m-ol li { margin: 4px 0; }
+.m-ul { list-style: disc; }
+.m-ol { list-style: decimal; }
+
+/* ── 구분선 ── */
+.m-divider {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+/* ── 코드 ── */
+.m-code {
+  margin: 10px 0;
+  padding: 14px 16px;
+  background: rgba(0,0,0,.4);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 6px;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+.m-code code { color: var(--text, #f0f0f0); }
+
+/* ── YouTube ── */
+.m-youtube {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  margin: 12px 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+}
+.m-youtube iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.m-youtube-empty {
+  padding: 30px;
+  background: rgba(255,255,255,.05);
+  text-align: center;
+  color: var(--text-muted, #888);
+  border-radius: 6px;
+}
+
+/* ── 이미지 figure (Phase 1.5 회귀 라운드 2 최종 패턴) ──
+   width: var(--img-w) — w*75px (1~16 grid)
+   max-width: 100% — 부모 안으로 반응형
+   data-align: left/center/right margin 정렬
+   .m-figure-breakout: w*75>760 일 때 viewport 기준 escape
+═══════════════════════════════════════════════════════════════ */
+.m-figure {
+  position: relative;
+  width: var(--img-w, 100%);
+  max-width: 100%;
+  margin: 16px auto;       /* 기본 가운데 */
+  border-radius: 6px;
+  overflow: hidden;
+}
+.m-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.m-figure[data-align="left"]   { margin-left: 0;    margin-right: auto; }
+.m-figure[data-align="center"] { margin-left: auto; margin-right: auto; }
+.m-figure[data-align="right"]  { margin-left: auto; margin-right: 0;    }
+/* w=16 일 땐 align 의미 없음 → 항상 가운데 */
+.m-figure[data-w="16"] { margin-left: auto; margin-right: auto; }
+
+/* breakout: 760px 초과 시 컨테이너 밖으로 시각적 확장 (항상 가운데) */
+.m-figure.m-figure-breakout {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 80px);
+  margin-left: 0;
+  margin-right: 0;
+}
+/* 전체너비 ON + w=16 → 컨테이너 100% (escape padding) */
+.type-m-content.full-width .m-figure[data-w="16"] {
+  position: relative;
+  left: auto;
+  transform: none;
+  width: calc(100% + 64px);
+  max-width: calc(100% + 64px);
+  margin-left: -32px;
+  margin-right: -32px;
+}
+
+/* 캡션 overlay — hover / touch 시 표시 */
+.m-figure figcaption.m-img-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.55) 60%, rgba(0,0,0,0) 100%);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+  padding: 28px 14px 10px;
+  margin: 0;
+  opacity: 0;
+  transition: opacity .15s;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .m-figure:hover figcaption.m-img-caption { opacity: 1; }
+}
+.m-figure.is-hovered figcaption.m-img-caption,
+.m-figure.caption-shown figcaption.m-img-caption { opacity: 1; }
+/* w ≤ 2 (≤150px) — 캡션 숨김 */
+.m-figure figcaption.m-img-caption.caption-hidden { display: none; }
+
+/* ── 컬럼 컨테이너 — 항상 16×75px (1200px) 폭 고정 (L31) ──
+   col.w = n 은 sum 무관 n×75px 시각 일관성
+   합 < 16 이면 cols 가 컨테이너 일부만 차지 + justify-content 가운데 정렬
+═══════════════════════════════════════════════════════════════ */
+.m-columns {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: center;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(16 * 75px);            /* 1200px 고정 */
+  max-width: calc(100vw - 80px);
+  margin: 8px 0;
+}
+/* 전체너비 ON → 컨테이너 100% (에디터 fullwidth 와 동일 패턴) */
+.type-m-content.full-width .m-columns {
+  position: static;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: none;
+  margin: 8px 0;
+}
+.m-column {
+  min-width: 0;
+  flex-shrink: 0;
+}
+/* 컬럼 내부 이미지 — 컬럼 폭 100% 채움 */
+.m-figure.m-figure-col-item {
+  width: 100% !important;
+  max-width: 100%;
+  margin: 0 auto;
+  --img-w: 100%;
+}
+.m-figure.m-figure-col-item img {
+  width: 100%;
+  height: auto;
+}
+/* 컬럼 안 figure 의 breakout / fullwidth 효과 취소 (figure 폭이 컬럼 밖으로 안 튀어나가게) */
+.m-column .m-figure.m-figure-breakout,
+.type-m-content.full-width .m-column .m-figure,
+.type-m-content.full-width .m-column .m-figure[data-w="16"] {
+  left: auto;
+  transform: none;
+  max-width: 100%;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* ── 모바일 (≤640px) — 핸들 X, 컬럼/breakout 무효 ── */
+@media (max-width: 640px) {
+  .m-figure.m-figure-breakout {
+    left: auto !important;
+    transform: none !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .m-columns {
+    flex-direction: column;
+    position: static !important;
+    left: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .m-column { width: 100% !important; }
+  .type-m-content.full-width .m-figure[data-w="16"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    left: auto !important;
+    transform: none !important;
+  }
 }
