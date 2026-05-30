@@ -703,10 +703,24 @@ async function loadCardBlockBody(card, cardIndex) {
           ${blocks.map(b => renderMBlock(b, card.id)).join('')}
         </div>
       `;
+
+      // 커버 이미지: meta.cover 있으면 bodyEl 앞(header 아래)에 배너 삽입
+      if (content.meta?.cover) {
+        // 중복 방지: 이미 삽입된 커버 제거
+        const cardBlock = bodyEl.closest('.card-block');
+        if (cardBlock) {
+          const existing = cardBlock.querySelector('.card-block-cover');
+          if (existing) existing.remove();
+        }
+        bodyEl.insertAdjacentHTML('beforebegin',
+          `<div class="card-block-cover"><img src="${CARD_DIR}/${card.id}/${escapeHtml(content.meta.cover)}" alt="" loading="lazy" decoding="async"></div>`
+        );
+      }
       // 모바일 / touch device — 이미지 캡션 hybrid 동작 (B12~B14)
       const scrollEl = document.getElementById('cardPopupScroll');
       const contentEl = bodyEl.querySelector('.type-m-content');
       if (contentEl && scrollEl) setupMImgCaptions(contentEl, scrollEl);
+      if (contentEl) highlightAndWireCode(contentEl);
     } catch (e) {
       bodyEl.innerHTML = `<div class="popup-empty"><p>Type M 컨텐츠를 불러오지 못했습니다.</p></div>`;
     }
@@ -1083,6 +1097,71 @@ function escHtmlM(s) {
     .replace(/'/g, '&#39;');
 }
 
+/** Type-M 콘텐츠 삽입 후: 코드 블록 하이라이트 + 복사 버튼 와이어링 */
+function highlightAndWireCode(root) {
+  if (!root) return;
+  root.querySelectorAll('pre.m-code > code').forEach(codeEl => {
+    if (codeEl.dataset.hl) return;
+    const langCls = [...codeEl.classList].find(c => c.startsWith('language-'));
+    if (typeof hljs !== 'undefined' && langCls && langCls !== 'language-plaintext') {
+      try { hljs.highlightElement(codeEl); } catch (e) {}
+    }
+    codeEl.dataset.hl = '1';
+  });
+  root.querySelectorAll('.m-code-copy').forEach(btn => {
+    if (btn.dataset.wired) return;
+    btn.dataset.wired = '1';
+    btn.addEventListener('click', () => {
+      const codeEl = btn.parentElement.querySelector('pre.m-code code');
+      if (!codeEl || !navigator.clipboard) return;
+      navigator.clipboard.writeText(codeEl.textContent).then(() => {
+        btn.textContent = '복사됨';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = '복사'; btn.classList.remove('copied'); }, 1500);
+      }).catch(() => {});
+    });
+  });
+}
+
+/** 목록 items 정규화 (문자열→{text,level:0}, 첫0, level≤직전+1) — editor normalizeListItems 와 동일 규칙 */
+function normalizeListItemsM(items) {
+  const arr = Array.isArray(items) ? items : [];
+  let prev = -1;
+  return arr.map((it, i) => {
+    const text  = typeof it === 'string' ? it : (it?.text ?? '');
+    let level   = (it && Number.isFinite(it.level)) ? Math.max(0, Math.min(4, Math.floor(it.level))) : 0;
+    level = (i === 0) ? 0 : Math.min(level, prev + 1);
+    prev = level;
+    return { text, level };
+  });
+}
+
+/** 플랫+level → 중첩 <ul>/<ol> HTML (editor renderListTree 와 동일 구조 → 시각 일치) */
+function buildNestedListHtml(items, tag, styleAttr) {
+  if (!items.length) return `<${tag} class="m-${tag}"${styleAttr}></${tag}>`;
+  let out = `<${tag} class="m-${tag}"${styleAttr}>`;
+  let depth = 0;
+  items.forEach((item, i) => {
+    const L = item.level;
+    if (i === 0) {
+      out += `<li>${escHtmlM(item.text)}`;
+    } else if (L > depth) {
+      out += `<${tag}><li>${escHtmlM(item.text)}`;   // 검증상 +1 → 직전 li 안에 하위 리스트
+    } else if (L === depth) {
+      out += `</li><li>${escHtmlM(item.text)}`;
+    } else {
+      out += `</li>`;
+      for (let d = depth; d > L; d--) out += `</${tag}></li>`;
+      out += `<li>${escHtmlM(item.text)}`;
+    }
+    depth = L;
+  });
+  out += `</li>`;
+  for (let d = depth; d > 0; d--) out += `</${tag}></li>`;
+  out += `</${tag}>`;
+  return out;
+}
+
 /** 블록 렌더링 디스패처 */
 function renderMBlock(block, cardId, opts = {}) {
   if (!block || typeof block !== 'object') return '';
@@ -1118,13 +1197,18 @@ function renderMBlock(block, cardId, opts = {}) {
 
     case 'ul': case 'ol': {
       const tag   = block.type;
-      const items = (block.items || []).map(it => `<li>${(typeof it === 'string' ? it : it?.text) || ''}</li>`).join('');
-      return `<${tag} class="m-${tag}"${styleAttr}>${items}</${tag}>`;
+      const items = normalizeListItemsM(block.items);
+      return buildNestedListHtml(items, tag, styleAttr);
     }
 
     case 'code': {
-      const lang = escHtmlM(block.lang || '');
-      return `<pre class="m-code"${styleAttr} data-lang="${lang}"><code>${escHtmlM(block.code || '')}</code></pre>`;
+      const lang = escHtmlM(block.lang || 'plaintext');
+      const wrapCls = block.wrap ? ' wrap' : '';
+      const langCls = (block.lang && block.lang !== 'plaintext') ? `language-${lang}` : '';
+      return `<div class="m-code-wrap">`
+        + `<button class="m-code-copy" type="button" aria-label="코드 복사">복사</button>`
+        + `<pre class="m-code${wrapCls}"${styleAttr} data-lang="${lang}"><code class="${langCls}">${escHtmlM(block.code || '')}</code></pre>`
+        + `</div>`;
     }
 
     case 'youtube': {

@@ -826,6 +826,28 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   display: block;
 }
 
+/* 카드 커버 배너 (card-block-header 아래, card-block-body 위) */
+.card-block-cover {
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-block-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .card-block-cover {
+    height: 140px;
+  }
+}
+
 /* Type A: iframe */
 .card-block-iframe-wrap {
   width: 100%;
@@ -1000,9 +1022,20 @@ body.popup-open {
 
 /* ── 목록 ── */
 .m-ul, .m-ol { margin: 6px 0 6px 20px; padding-left: 8px; }
-.m-ul li, .m-ol li { margin: 4px 0; }
-.m-ul { list-style: disc; }
-.m-ol { list-style: decimal; }
+.m-ul ul, .m-ol ol { margin: 4px 0; padding-left: 24px; }   /* 중첩 레벨 들여쓰기 (에디터와 동일) */
+.m-ul li, .m-ol li { margin: 4px 0; white-space: pre-line; }   /* Shift+Enter soft break(\n) 렌더 — 에디터와 일치 */
+/* ul 레벨별 불릿 순환 */
+.m-ul              { list-style-type: disc; }
+.m-ul ul           { list-style-type: circle; }
+.m-ul ul ul        { list-style-type: square; }
+.m-ul ul ul ul     { list-style-type: disc; }
+.m-ul ul ul ul ul  { list-style-type: circle; }
+/* ol 레벨별 번호 순환 (중첩 ol → 레벨별 재시작) */
+.m-ol              { list-style-type: decimal; }
+.m-ol ol           { list-style-type: lower-alpha; }
+.m-ol ol ol        { list-style-type: lower-roman; }
+.m-ol ol ol ol     { list-style-type: decimal; }
+.m-ol ol ol ol ol  { list-style-type: lower-alpha; }
 
 /* ── 구분선 ── */
 .m-divider {
@@ -1025,6 +1058,42 @@ body.popup-open {
   white-space: pre;
 }
 .m-code code { color: var(--text, #f0f0f0); }
+.m-code.wrap { white-space: pre-wrap; word-break: break-word; overflow-x: visible; }
+
+/* hljs(github-dark) 테마와 .m-code 박스 정합 — 테마 자체 배경/패딩 무력화, 토큰 색만 사용.
+   ※ 향후 라이트 테마 토글 시 vendor 테마 CSS 만 [data-theme] 로 스왑하면 됨. */
+.m-code code.hljs {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+/* 복사 버튼 */
+.m-code-wrap { position: relative; }
+.m-code-wrap .m-code { margin: 10px 0; }
+.m-code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--text, #f0f0f0);
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s ease, background .15s ease;
+}
+.m-code-wrap:hover .m-code-copy,
+.m-code-copy:focus-visible { opacity: 1; }
+.m-code-copy:hover { background: rgba(255,255,255,.16); }
+.m-code-copy.copied { color: #7ee787; border-color: rgba(126,231,135,.4); }
+@media (hover: none) {
+  .m-code-copy { opacity: .85; }   /* 터치 기기: 항상 노출 */
+}
 
 /* ── YouTube ── */
 .m-youtube {
