@@ -976,7 +976,7 @@ body.popup-open {
 
 /* ── Type M 콘텐츠 컨테이너 ── */
 .type-m-content {
-  padding: 32px 40px 40px;
+  padding: 32px 28px 40px;
   max-width: 760px;
   margin: 0 auto;
   font-size: 17px;
@@ -995,10 +995,18 @@ body.popup-open {
 .type-m-content > .m-h3:first-child { margin-top: 0; }
 
 /* ── 텍스트 블록 ── */
-.m-h1 { font-size: 28px; font-weight: 700; line-height: 1.3; margin: 24px 0 12px; }
-.m-h2 { font-size: 22px; font-weight: 700; line-height: 1.3; margin: 20px 0 10px; }
-.m-h3 { font-size: 18px; font-weight: 700; line-height: 1.4; margin: 16px 0 8px; }
-.m-p  { margin: 6px 0; word-break: keep-all; }
+.m-h1 { font-size: 28px; font-weight: 700; line-height: 1.3; margin: 24px 0 12px; padding-left: 12px; padding-right: 12px; }
+.m-h2 { font-size: 22px; font-weight: 700; line-height: 1.3; margin: 20px 0 10px; padding-left: 12px; padding-right: 12px; }
+.m-h3 { font-size: 18px; font-weight: 700; line-height: 1.4; margin: 16px 0 8px; padding-left: 12px; padding-right: 12px; }
+.m-p  { margin: 6px 0; word-break: keep-all; padding-left: 12px; padding-right: 12px; }
+.m-columns .m-h1 { padding-left: 6px; padding-right: 6px; }
+.m-columns .m-h2 { padding-left: 6px; padding-right: 6px; }
+.m-columns .m-h3 { padding-left: 6px; padding-right: 6px; }
+.m-columns .m-p { padding-left: 6px; padding-right: 6px; }
+/* 인라인 bold: 에디터 .ed-text b/strong → 700 규칙과 일치 (UA 기본값 의존 제거) */
+.m-h1 b, .m-h1 strong, .m-h2 b, .m-h2 strong, .m-h3 b, .m-h3 strong,
+.m-p b, .m-p strong, .m-quote b, .m-quote strong,
+.m-callout-text b, .m-callout-text strong { font-weight: 700; }
 .m-quote {
   margin: 12px 0;
   padding: 6px 16px;

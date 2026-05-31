@@ -15,7 +15,12 @@
     {
       "id": "010_img_test_B",
       "title": "이미지 및 컬럼 테스트 2",
-      "type": "M"
+      "type": "M",
+      "thumb": "images/1779799365944.png",
+      "tags": [
+        "테스트"
+      ],
+      "description": "한줄설명 테스트"
     },
     {
       "id": "001_screenflow",
@@ -60,13 +65,18 @@
     {
       "id": "009_del_test",
       "title": "test",
-      "type": "M"
+      "type": "M",
+      "thumb": "images/1779579156758.jpeg"
     },
     {
       "id": "010_img_test",
       "title": "이미지 테스트",
       "type": "M",
-      "thumb": "images/1779625238120.png"
+      "thumb": "images/1779625238120.png",
+      "tags": [
+        "테스트"
+      ],
+      "description": "한줄설명 테스트"
     },
     {
       "id": "011_back_test",
