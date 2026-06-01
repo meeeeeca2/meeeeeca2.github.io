@@ -983,6 +983,9 @@ async function _fetchCardThumb(card) {
         if (firstImgSrc) {
           return `${CARD_DIR}/${card.id}/${firstImgSrc}`;
         }
+        // 이미지 없음 → 합성 썸네일 생성
+        const synth = generateSyntheticThumb(card, content);
+        if (synth) return synth;
       }
     } catch (_) { /* fallthrough */ }
     return null;
@@ -1025,6 +1028,244 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/**
+ * 인라인 HTML 태그 + 엔티티를 제거하고 평문 텍스트만 추출.
+ * block.text 등에 <b>, <a>, <br> 등이 포함될 수 있음 → canvas 용으로 clean.
+ * DOM 에 붙이지 않으므로 XSS 안전.
+ */
+function stripHtmlToText(html) {
+  if (!html || typeof html !== 'string') return '';
+  const d = document.createElement('div');
+  d.innerHTML = html;
+  return (d.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * content.blocks 에서 썸네일 발췌 후보를 추출.
+ * 우선순위: callout → quote → fallback(heading + 첫 p).
+ * @param {object} content - content.json 파싱 결과
+ * @param {object} card    - cards.json 카드 항목 (card.title 폴백용)
+ * @returns {{ kind: 'callout'|'quote'|'fallback', emoji?, text?, title?, body? }}
+ */
+function extractThumbHighlight(content, card) {
+  const blocks = Array.isArray(content?.blocks) ? content.blocks : [];
+
+  // 1순위: 첫 callout
+  for (const b of blocks) {
+    if (b?.type === 'callout') {
+      const text = stripHtmlToText(b.text);
+      if (text) return { kind: 'callout', emoji: b.emoji || '💡', text };
+    }
+  }
+
+  // 2순위: 첫 quote
+  for (const b of blocks) {
+    if (b?.type === 'quote') {
+      const text = stripHtmlToText(b.text);
+      if (text) return { kind: 'quote', text };
+    }
+  }
+
+  // 3순위: fallback — 첫 heading + 첫 p
+  let title = '';
+  let body = '';
+  for (const b of blocks) {
+    if (!title && (b?.type === 'h1' || b?.type === 'h2' || b?.type === 'h3')) {
+      title = stripHtmlToText(b.text);
+    }
+    if (!body && b?.type === 'p') {
+      body = stripHtmlToText(b.text);
+    }
+    if (title && body) break;
+  }
+  if (!title) title = content?.meta?.title || card?.title || '';
+  return { kind: 'fallback', title, body };
+}
+
+/**
+ * canvas 워드랩 유틸 — measureText 기반 줄 분할.
+ * @returns {string[]} 분할된 줄 배열
+ */
+function wrapTextToLines(ctx, text, maxWidth) {
+  if (!text) return [];
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+  for (const word of words) {
+    const candidate = current ? current + ' ' + word : word;
+    if (ctx.measureText(candidate).width > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+/**
+ * 이미지 없는 Type M 카드용 합성 썸네일 생성.
+ * offscreen canvas 에 발췌 텍스트를 그려 data URL(PNG) 반환.
+ * 실패 시 null 반환(안전 폴백).
+ * @param {object} card    - cards.json 카드 항목
+ * @param {object} content - content.json 파싱 결과
+ * @returns {string|null}
+ */
+function generateSyntheticThumb(card, content) {
+  try {
+    // --- 치수 ---
+    const LOGICAL_W = 800;
+    const LOGICAL_H = Math.round(LOGICAL_W * 3.5 / 4); // 700
+    const DPR = Math.min(window.devicePixelRatio || 2, 3);
+    const canvas = document.createElement('canvas');
+    canvas.width  = LOGICAL_W * DPR;
+    canvas.height = LOGICAL_H * DPR;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    // --- 테마 색상 (CSS 변수 → 폴백) ---
+    const root = document.documentElement;
+    const cs = getComputedStyle(root);
+    const bgCard  = cs.getPropertyValue('--bg-card').trim()  || '#181818';
+    const accent  = cs.getPropertyValue('--accent').trim()   || '#beff00';
+    const textCol = cs.getPropertyValue('--text').trim()     || '#f0f0f0';
+    const muted   = cs.getPropertyValue('--text-muted').trim()|| '#777';
+
+    // --- 배경 그라데이션 ---
+    const grad = ctx.createLinearGradient(0, 0, 0, LOGICAL_H);
+    grad.addColorStop(0, bgCard);
+    grad.addColorStop(1, '#111111');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+
+    // --- 액센트 포인트: 좌상단 작은 바 ---
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.7;
+    ctx.fillRect(40, 40, 36, 4);
+    ctx.globalAlpha = 1;
+
+    // --- 발췌 추출 ---
+    const highlight = extractThumbHighlight(content, card);
+
+    // 텍스트 렌더 영역: 안전 밴드(상단 40 ~ 하단 80%) 안에서 세로 중앙 배치.
+    // 하단 ~20% 는 그리드/헤더의 제목 오버레이+그라데이션 구역이라 비움.
+    const PAD_X   = 48;
+    const TEXT_W  = LOGICAL_W - PAD_X * 2;
+    const TOP_PAD = 40;
+    const BOTTOM_LIMIT = Math.round(LOGICAL_H * 0.80); // 하단 20% 제목영역 비움
+    const BAND_H  = BOTTOM_LIMIT - TOP_PAD;
+    const bodyFont  = cs.fontFamily || "'Noto Sans KR', system-ui, sans-serif";
+    ctx.textBaseline = 'top';
+
+    // 측정한 콘텐츠 높이를 안전 밴드 안에서 세로 중앙으로
+    const centerStart = (totalH) => Math.max(TOP_PAD, TOP_PAD + (BAND_H - totalH) / 2);
+    // MAX_LINES 도달 시 마지막 줄 말줄임
+    const ellipsisLast = (lines, i, MAX_LINES) =>
+      (i === MAX_LINES - 1 && i < lines.length - 1) ? lines[i].slice(0, -1) + '…' : lines[i];
+
+    if (highlight.kind === 'callout') {
+      const EMOJI_H = 84, lineH = 42, MAX_LINES = 5;
+      ctx.font = `500 30px ${bodyFont}`;
+      const lines = wrapTextToLines(ctx, highlight.text, TEXT_W);
+      const shown = Math.min(lines.length, MAX_LINES);
+      const totalH = EMOJI_H + shown * lineH;
+      let y = centerStart(totalH);
+
+      // 이모지 크게
+      ctx.font = `72px ${bodyFont}`;
+      ctx.fillText(highlight.emoji, PAD_X, y);
+      y += EMOJI_H;
+
+      // 발췌 텍스트
+      ctx.font = `500 30px ${bodyFont}`;
+      ctx.fillStyle = textCol;
+      for (let i = 0; i < shown; i++) {
+        ctx.fillText(ellipsisLast(lines, i, MAX_LINES), PAD_X, y);
+        y += lineH;
+      }
+
+    } else if (highlight.kind === 'quote') {
+      const Q_H = 74, lineH = 44, MAX_LINES = 5, xOff = PAD_X + 28;
+      ctx.font = `italic 30px ${bodyFont}`;
+      const lines = wrapTextToLines(ctx, highlight.text, TEXT_W - 28);
+      const shown = Math.min(lines.length, MAX_LINES);
+      const totalH = Q_H + shown * lineH;
+      const y0 = centerStart(totalH);
+
+      // 좌측 액센트 바 — 블록 전체 높이에 맞춤
+      ctx.fillStyle = accent;
+      ctx.globalAlpha = 0.9;
+      ctx.fillRect(PAD_X, y0 + 4, 5, totalH - 8);
+      ctx.globalAlpha = 1;
+
+      // 큰따옴표
+      let y = y0;
+      ctx.font = `bold 68px Georgia, serif`;
+      ctx.fillStyle = accent;
+      ctx.globalAlpha = 0.5;
+      ctx.fillText('"', PAD_X + 22, y);
+      ctx.globalAlpha = 1;
+      y += Q_H;
+
+      // 발췌 텍스트
+      ctx.font = `italic 30px ${bodyFont}`;
+      ctx.fillStyle = textCol;
+      for (let i = 0; i < shown; i++) {
+        ctx.fillText(ellipsisLast(lines, i, MAX_LINES), xOff, y);
+        y += lineH;
+      }
+
+    } else if (highlight.title || highlight.body) {
+      // fallback: 소제목 + 본문 발췌
+      const TITLE_LH = 34, TITLE_GAP = 16, BODY_LH = 40, MAX_TITLE = 2, MAX_BODY = 5;
+      ctx.font = `600 24px ${bodyFont}`;
+      const titleLines = highlight.title ? wrapTextToLines(ctx, highlight.title, TEXT_W) : [];
+      const titleShown = Math.min(titleLines.length, MAX_TITLE);
+      ctx.font = `400 28px ${bodyFont}`;
+      const bodyLines = highlight.body ? wrapTextToLines(ctx, highlight.body, TEXT_W) : [];
+      const bodyShown = Math.min(bodyLines.length, MAX_BODY);
+      const totalH = (titleShown ? titleShown * TITLE_LH + TITLE_GAP : 0) + bodyShown * BODY_LH;
+      let y = centerStart(totalH);
+
+      if (titleShown) {
+        ctx.font = `600 24px ${bodyFont}`;
+        ctx.fillStyle = accent;
+        for (let i = 0; i < titleShown; i++) {
+          ctx.fillText(ellipsisLast(titleLines, i, MAX_TITLE), PAD_X, y);
+          y += TITLE_LH;
+        }
+        y += TITLE_GAP;
+      }
+      if (bodyShown) {
+        ctx.font = `400 28px ${bodyFont}`;
+        ctx.fillStyle = textCol;
+        for (let i = 0; i < bodyShown; i++) {
+          ctx.fillText(ellipsisLast(bodyLines, i, MAX_BODY), PAD_X, y);
+          y += BODY_LH;
+        }
+      }
+
+    } else {
+      // 최소 표시 — card.title 만이라도 (중앙)
+      ctx.font = `500 24px ${bodyFont}`;
+      const lines = wrapTextToLines(ctx, card.title || '', TEXT_W);
+      const shown = Math.min(lines.length, 3);
+      let y = centerStart(shown * 34);
+      ctx.fillStyle = muted;
+      for (let i = 0; i < shown; i++) {
+        ctx.fillText(ellipsisLast(lines, i, 3), PAD_X, y);
+        y += 34;
+      }
+    }
+
+    return canvas.toDataURL('image/png');
+  } catch (e) {
+    console.warn('[generateSyntheticThumb] 합성 실패:', e);
+    return null;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════
