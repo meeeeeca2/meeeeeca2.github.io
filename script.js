@@ -651,6 +651,13 @@ async function appendCardBlock(cardIndex, position) {
   `;
 
   if (position === 'start') {
+    // ── 원자적 prepend (B1 튐 해결) ──
+    // 기존: spinner 끼움 → 비동기 콘텐츠 로드되며 높이 폭증 → ResizeObserver 가 scrollTop 을
+    //       최대 5초간 계속 보정 → 사용자가 위로 스크롤하는 도중 발동하면 뷰포트를 아래로 납치(튐).
+    // 변경: 콘텐츠를 먼저 완성(이미지 aspect-ratio 로 높이 확정)한 뒤 삽입 + scrollTop 1회 보정.
+    //       삽입 시점에 최종 높이가 확정돼 추가 성장이 없으므로 추격 보정 불필요 → 튐 없음.
+    await loadCardBlockBody(card, cardIndex, block);   // 아직 DOM 미삽입 — detached block 의 body 채움
+
     const scrollWrap   = document.getElementById('cardPopupScroll');
     const scrollBefore = scrollWrap.scrollTop;
     const heightBefore = blocksEl.scrollHeight;
@@ -658,35 +665,25 @@ async function appendCardBlock(cardIndex, position) {
     blocksEl.insertBefore(block, blocksEl.firstChild);
     popupIndices.unshift(cardIndex);
 
-    // 스크롤 위치 보정 (prepend 후 뷰포트 유지)
+    // 삽입으로 위쪽에 더해진 높이만큼 1회만 보정 → 뷰포트의 기존 콘텐츠 위치 유지
     requestAnimationFrame(() => {
-      let prevH = blocksEl.scrollHeight;
-      scrollWrap.scrollTop = scrollBefore + (prevH - heightBefore);
-
-      // 이미지·iframe 등 비동기 콘텐츠 로딩으로 블록 높이가 변할 때마다 scrollTop 추가 보정.
-      // 보정 없이는 삽입된 블록이 커질수록 목표 카드가 뷰포트 아래로 밀려 중간부터 보이는 버그 발생.
-      const ro = new ResizeObserver(() => {
-        const newH = blocksEl.scrollHeight;
-        if (newH !== prevH) {
-          scrollWrap.scrollTop += newH - prevH;
-          prevH = newH;
-        }
-      });
-      ro.observe(block);
-      // 콘텐츠 로딩이 완료될 충분한 시간 후 해제 (이후 변화는 사용자 스크롤로 처리)
-      setTimeout(() => ro.disconnect(), 5000);
+      const newH = blocksEl.scrollHeight;
+      scrollWrap.scrollTop = scrollBefore + (newH - heightBefore);
     });
-  } else {
-    blocksEl.appendChild(block);
-    popupIndices.push(cardIndex);
+    return; // body 는 이미 로드됨
   }
 
-  // 콘텐츠 로드
+  // position === 'end' (다음 카드 append — 아래로 늘어나므로 보정 불필요)
+  blocksEl.appendChild(block);
+  popupIndices.push(cardIndex);
   await loadCardBlockBody(card, cardIndex);
 }
 
-async function loadCardBlockBody(card, cardIndex) {
-  const bodyEl = document.getElementById(`block-body-${cardIndex}`);
+async function loadCardBlockBody(card, cardIndex, blockEl) {
+  // blockEl 이 주어지면(원자적 prepend: 아직 DOM 미삽입) 그 안의 body 를, 아니면 DOM 에서 id 로 찾는다.
+  const bodyEl = blockEl
+    ? blockEl.querySelector('.card-block-body')
+    : document.getElementById(`block-body-${cardIndex}`);
   if (!bodyEl) return;
 
   if (card.type === 'M') {
@@ -742,7 +739,7 @@ async function loadCardBlockBody(card, cardIndex) {
   } else {
     // Type B: 폴더 이미지 자동 순차 표시
     try {
-      const images = await fetchImages(`${CARD_DIR}/${card.id}`);
+      const { files: images, dims } = await fetchImagesData(`${CARD_DIR}/${card.id}`);
       if (images.length === 0) {
         bodyEl.innerHTML = `
           <div class="popup-empty">
@@ -752,9 +749,11 @@ async function loadCardBlockBody(card, cardIndex) {
       } else {
         bodyEl.innerHTML = `
           <div class="card-block-images">
-            ${images.map(f =>
-              `<img src="${CARD_DIR}/${card.id}/${f}" alt="${escapeHtml(f)}" loading="lazy">`
-            ).join('')}
+            ${images.map(f => {
+              const d = dims[f];
+              const ar = (Array.isArray(d) && d[0] && d[1]) ? ` style="aspect-ratio:${d[0]}/${d[1]}"` : '';
+              return `<img src="${CARD_DIR}/${card.id}/${f}" alt="${escapeHtml(f)}" loading="lazy"${ar}>`;
+            }).join('')}
           </div>`;
       }
     } catch (e) {
@@ -923,21 +922,26 @@ function initKeyboard() {
  * 1순위: 폴더 내 files.json (GitHub Pages 등 정적 호스팅)
  * 2순위: api.php (PHP 호스팅 — woobi.co.kr 등)
  */
-async function fetchImages(folder) {
-  // 1순위: 정적 manifest
+async function fetchImagesData(folder) {
+  // 1순위: 정적 manifest { files:[], dims:{name:[w,h]} }
   try {
     const res = await fetch(`${folder}/files.json`);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data.files)) return data.files;
+      if (Array.isArray(data.files)) return { files: data.files, dims: data.dims || {} };
     }
   } catch { /* fall through */ }
 
-  // 2순위: api.php
+  // 2순위: api.php (dims 없음 → graceful degradation)
   const res = await fetch(`${API}?folder=${encodeURIComponent(folder)}`);
   if (!res.ok) throw new Error(`API 오류: ${res.status}`);
   const data = await res.json();
-  return data.files || [];
+  return { files: data.files || [], dims: {} };
+}
+
+// 호환 래퍼 — 문자열 배열만 필요한 기존 호출부용 (계약 유지)
+async function fetchImages(folder) {
+  return (await fetchImagesData(folder)).files;
 }
 
 /** 폴더의 첫 번째 이미지 URL을 반환 (썸네일용). 없으면 null. */
@@ -1492,6 +1496,8 @@ function renderMImg(block, cardId, isNested) {
   const w     = clampMW(block.w);
   const align = block.align || 'center';
   const caption = block.caption || '';
+  // 자연 치수가 있으면 aspect-ratio 로 로드 전 공간 예약 (layout shift 방지 — 원자적 prepend 의 전제)
+  const aspectStyle = (block.nw && block.nh) ? ` style="aspect-ratio:${block.nw}/${block.nh}"` : '';
 
   if (isNested) {
     // 컬럼 내부 이미지 — 부모 컬럼 폭 100% 채움 (col-item 패턴)
@@ -1499,7 +1505,7 @@ function renderMImg(block, cardId, isNested) {
     return `
       <figure class="m-figure m-figure-col-item" data-align="${escHtmlM(align)}" data-w="${w}">
         <img src="${CARD_DIR}/${cardId}/${escHtmlM(block.src)}"
-             alt="${escHtmlM(caption)}" loading="lazy" decoding="async">
+             alt="${escHtmlM(caption)}" loading="lazy" decoding="async"${aspectStyle}>
         ${caption ? `<figcaption class="m-img-caption">${escHtmlM(caption)}</figcaption>` : ''}
       </figure>`;
   }
@@ -1512,7 +1518,7 @@ function renderMImg(block, cardId, isNested) {
   return `
     <figure class="${cls.join(' ')}" data-align="${escHtmlM(align)}" data-w="${w}" style="--img-w:${w * M_IMG_UNIT_PX}px">
       <img src="${CARD_DIR}/${cardId}/${escHtmlM(block.src)}"
-           alt="${escHtmlM(caption)}" loading="lazy" decoding="async">
+           alt="${escHtmlM(caption)}" loading="lazy" decoding="async"${aspectStyle}>
       ${caption ? `<figcaption class="m-img-caption${captionHidden}">${escHtmlM(caption)}</figcaption>` : ''}
     </figure>`;
 }

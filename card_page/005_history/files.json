@@ -4,5 +4,23 @@
     "jys-portfolio-202301_020.jpeg",
     "jys-portfolio-202301_021.jpeg",
     "jys-portfolio-202301_022.jpeg"
-  ]
+  ],
+  "dims": {
+    "jys-portfolio-202301_019.jpeg": [
+      2100,
+      1480
+    ],
+    "jys-portfolio-202301_020.jpeg": [
+      2100,
+      1480
+    ],
+    "jys-portfolio-202301_021.jpeg": [
+      2100,
+      1480
+    ],
+    "jys-portfolio-202301_022.jpeg": [
+      2100,
+      1480
+    ]
+  }
 }
