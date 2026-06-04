@@ -14,6 +14,7 @@ api.php
 editor.html
 editor.css
 editor.js
+preview-stub.html
 
 # Backup files (사고 복구 / 자동 백업 파일들)
 *.bak-reset
@@ -24,6 +25,11 @@ content.json.bak.*
 clean_content.py
 _clean_backup/
 
+# 롤백 스냅샷 도구 (로컬 전용 — 작업 전 editor.* 백업)
+snapshot.sh
+restore.sh
+_snapshots/
+
 # Temp folders
 무제 폴더/
 card_page/009_del_test/
@@ -31,6 +37,8 @@ card_page/010_img_test/
 card_page/010_img_test_B/
 card_page/011_back_test/
 card_page/temp_saved_test/
+card_page/012_test_cardthumb_001/
+card_page/012_test_cardthumb_002/
 
 # Python cache
 __pycache__/
